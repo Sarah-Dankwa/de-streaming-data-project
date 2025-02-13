@@ -4,17 +4,31 @@ import os
 from dotenv import load_dotenv
 from pprint import pprint
 import boto3
+import logging
 
 load_dotenv()
+
+logger = logging.getLogger()
+
+logging.getLogger().setLevel(logging.INFO)
+
 
 API_KEY = os.environ.get("GUARDIAN_API_KEY")
 
 base_url = 'https://content.guardianapis.com/search'
 
-def create_url_params():
+def create_url_parameters():
+    """user will input a search term for the api call and an optional from date.
+
+       Returns: 
+            Dictionary with environment variable api key, 
+            user inputted search term and optional from date to be passed to the requests module in a different function.
+            From date will be assingned to None if not inputted by user.
+     """
     payload = {
         "api-key": API_KEY
     }
+
     search_term = input("What would you like to search for today? \n")
     date_from = input("Would you like to limit those to a specific date? Press enter to skip \n")
 
@@ -27,82 +41,143 @@ def create_url_params():
     
     return payload
 
-def create_sqs_reference():
+def create_sqs_queue_reference():
+    """User will be prompted to provide a reference for the name of their SQS queue.
+    
+       Returns:
+            Inputted reference
+    """
     reference = input("Please give a reference for your message broker (spaces must be filled with underscores): \n")
 
     return reference
 
- 
-def get_api_response():
+def get_api_response_json(payload):
+    """This fuctions makes an api call using requests.get and a given url.
 
-    payload = create_url_params()
+       Returns:
+            The results of the api call in json format.
+    """
     response = requests.get(base_url, params=payload)
-    data = response.json()['response']['results']
+
+    if response.status_code == 200:
+        return response.json()['response']['results']
+    else:
+        return "The request could not be handled"
+       
+def format_api_response_message(api_result):
+    """This function takes in the results from the api call made in another function and formats them.
+        
+        Returns:
+           A json object with the relevant key value pairs extracted from the api results """
 
     dict_keys = ['webPublicationDate', 'webTitle', 'webUrl']
    
-    result_list = [[v for k, v in dict.items() if k in dict_keys] for dict in data ]
+    result_list = [[v for k, v in dict.items() if k in dict_keys] for dict in api_result ]
   
     result_dict = [dict(zip(dict_keys, item)) for item in result_list]
 
     return json.dumps(result_dict)
 
+def create_sqs_queue(reference):
+    """Creates an sqs queue for the AWS user using the inputted reference. 
+       Messages within this queue are only allowed to persist for a maximum of 3 days
 
+       Returns:
+            The url of the created queue.
+    """
 
-def create_sqs_queue():
+    reference = create_sqs_queue_reference()
     
-    reference = create_sqs_reference()
-
     sqs_client = boto3.client('sqs')
     sqs_queue = sqs_client.create_queue(
         QueueName=reference,
         Attributes={
             "MessageRetentionPeriod":"259200"
-
         }
             )
-   
     return sqs_queue["QueueUrl"]
 
-def send_sqs_message():
-
-    api_response = get_api_response()
-
-    queue_url = create_sqs_queue()
-
-    sqs_client = boto3.client('sqs')
-
-    sqs_client.send_message(
-        QueueUrl=queue_url,
-        MessageBody=api_response,
-        )
+def send_sqs_message(formatted_message, queue_url):
+    """This function sends the formatted get requests response and sends it to
+        the queue created by the user.
         
-    
-    message_to_view = sqs_client.receive_message(
-                            QueueUrl=queue_url,
-                            AttributeNames=[
-                                'MessageRetentionPeriod'
-                                ],
-                            WaitTimeSeconds=20
-    )
+       Returns:
+            An AWS SQS response consisting of metadata such as the message Id and encoded message contents
+    """
 
-    messages =message_to_view.get('Messages', [])
-    for message in messages:
-
-        pprint((f"Received message: {message['Body']}"), width=80)
-
-   
-
-    
-
-    
-def receieve_sqs_message():
     sqs_client = boto3.client('sqs')
-    sqs_client.receieve_message(
-       
-    )
+
+    sqs_response = sqs_client.send_message(
+            QueueUrl=queue_url,
+            MessageBody=formatted_message,
+            )
     
-get_api_response()
-#send_sqs_message()
+    return sqs_response
+    
+def view_sqs_message(queue_url):
+
+    view_message = input("Would you like to see the message? Type y or n: \n")
+
+    if view_message == "y":
+        sqs_client = boto3.client('sqs')
+        sqs_message = sqs_client.receive_message(
+                QueueUrl=queue_url,
+                WaitTimeSeconds=20
+    )
+
+        messages =sqs_message.get('Messages', [])
+        for message in messages:
+
+            return (f"{'Received message':1}: {message['Body']}")
+
+    else:
+        return("Thank you")
+
+def lambda_handler(event=None, context=None):
+    """
+    The lambda function checks for an api-key environment variable.
+
+    If one is present then:
+
+        1. Url parameters are created with user input - only one variable is mandatory
+
+        2. If the parameters object is the correct length then the api is called using requests.get and a response returned
+
+        3. This response is then formatted to a json object
+
+        4. An AWS SQS Queue is then created using a user inputted reference value and returns a url pointing to the queue.
+
+        5. The formatted json object and queue url are then used to send the message to the queue. 
+           This functions returns some metadata which can be used to verify of the message was sent successfully.
+
+        6. The user then has the option to view the message on the screen.
+    """
+
+    if not API_KEY:
+        logger.error("API KEY NOT FOUND - PLEASE CHECK")
+
+    parameters = create_url_parameters()
+
+    if len(parameters)==3:
+        api_response = get_api_response_json(payload=parameters)
+
+    formatted_response = format_api_response_message(api_response)
+
+    sqs_queue_url = create_sqs_queue()
+
+    send_sqs = send_sqs_message(formatted_response, sqs_queue_url)
+
+    if not send_sqs['MD5OfMessageBody']:
+        logger.error("MESSAGE HAS NOT BEEN RECIEVED BY SQS")
+    print("MESSAGE HAS BEEN RECIEVED BY SQS")
+    logger.info("MESSAGE HAS BEEN RECIEVED BY SQS")
+
+    view_response = view_sqs_message(sqs_queue_url)
+
+    return view_response
+            
+
+    
 
 
+# lambda_handler()
