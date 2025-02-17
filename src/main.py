@@ -1,6 +1,8 @@
+import re._compiler
 import requests
 import json
 import os
+import re
 from dotenv import load_dotenv
 from pprint import pprint
 import boto3
@@ -17,6 +19,16 @@ API_KEY = os.environ.get("GUARDIAN_API_KEY")
 
 base_url = 'https://content.guardianapis.com/search'
 
+
+def is_valid_date(date):
+    """Checks if an inputted date is a valid year, month and year in the form YYYY-MM-DD
+       NB. needs to be updated to ensure valid year from 1999 - 2025 and not a date in the future
+       Returns:
+            Boolean for valid or not valid dates
+    """
+    date_regex = re.compile(r'^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$')
+    return bool(date_regex.match(date))
+
 def create_url_parameters():
     """user will input a search term for the api call and an optional from date.
 
@@ -29,16 +41,29 @@ def create_url_parameters():
         "api-key": API_KEY
     }
 
-    search_term = input("What would you like to search for today? \n")
-    date_from = input("Would you like to limit those to a specific date? Press enter to skip \n")
+    search_term = ''
+    date_from = ''
+
+    while not search_term:
+        search_term = input("What would you like to search for today? You must enter a value \n")
 
     payload['q'] = search_term
+     
+    date_from = input("Would you like to limit those to a specific date? Input data in the form YYYY-MM-DD or press enter to skip  \n")
 
     if not date_from:
         payload['from-date'] = None
-    else:
-        payload['from-date'] = date_from
-    
+
+    while date_from:
+        if is_valid_date(date_from):
+            payload['from-date'] = date_from
+            break
+        else:
+            print("Please enter a valid date")
+            date_from = input("Would you like to limit those to a specific date? Input data in the form YYYY-MM-DD or press enter to skip  \n")
+            continue 
+        
+   
     return payload
 
 def create_sqs_queue_reference():
@@ -47,9 +72,14 @@ def create_sqs_queue_reference():
        Returns:
             Inputted reference
     """
-    reference = input("Please give a reference for your message broker (spaces must be filled with underscores): \n")
+    reference = ''
 
-    return reference
+    while not reference:
+        reference = input("Please give a reference for your message broker. You must enter a value: \n")
+    
+    correct_format_reference = reference.replace(" ", "_")
+   
+    return correct_format_reference
 
 def get_api_response_json(payload):
     """This fuctions makes an api call using requests.get and a given url.
@@ -85,9 +115,7 @@ def create_sqs_queue(reference):
        Returns:
             The url of the created queue.
     """
-
-    reference = create_sqs_queue_reference()
-    
+   
     sqs_client = boto3.client('sqs')
     sqs_queue = sqs_client.create_queue(
         QueueName=reference,
@@ -95,6 +123,7 @@ def create_sqs_queue(reference):
             "MessageRetentionPeriod":"259200"
         }
             )
+    
     return sqs_queue["QueueUrl"]
 
 def send_sqs_message(formatted_message, queue_url):
@@ -139,7 +168,7 @@ def lambda_handler(event=None, context=None):
 
     If one is present then:
 
-        1. Url parameters are created with user input - only one variable is mandatory
+        1. Url parameters are created with user input         
 
         2. If the parameters object is the correct length then the api is called using requests.get and a response returned
 
@@ -161,9 +190,12 @@ def lambda_handler(event=None, context=None):
     if len(parameters)==3:
         api_response = get_api_response_json(payload=parameters)
 
+
     formatted_response = format_api_response_message(api_response)
 
-    sqs_queue_url = create_sqs_queue()
+    queue_reference = create_sqs_queue_reference()
+
+    sqs_queue_url = create_sqs_queue(queue_reference)
 
     send_sqs = send_sqs_message(formatted_response, sqs_queue_url)
 
