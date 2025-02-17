@@ -117,37 +117,37 @@ class TestSQSQueueReferenceCreated:
         reference_value = create_sqs_queue_reference()
         assert reference_value == "guardian_content_today"
  
-class TestAPICallResponse:
-    pass
+# class TestAPICallResponse:
+#     pass
 
-        # TEST FOR 200 RESPONSE
-        # TEST FOR NON-200 RESPONSE IF BAD REQUEST
-        # TEST FOR CORRECT FORMAT RESPONSE
-        # mock_response = mock_get.return_value
-        # mock_response.status_code = 200
-        # mock_response.json.return_value = {"key": "value"}
+#         # TEST FOR 200 RESPONSE
+#         # TEST FOR NON-200 RESPONSE IF BAD REQUEST
+#         # TEST FOR CORRECT FORMAT RESPONSE
+#         # mock_response = mock_get.return_value
+#         # mock_response.status_code = 200
+#         # mock_response.json.return_value = {"key": "value"}
 
-        # client = APIClient()
-        # test_url = "https://testurl.com"
-        # test_payload = {"a":"b", "c":"d", "e":"f"}
+#         # client = APIClient()
+#         # test_url = "https://testurl.com"
+#         # test_payload = {"a":"b", "c":"d", "e":"f"}
 
-        # result = client.get_api_response_json(test_payload)
+#         # result = client.get_api_response_json(test_payload)
 
-        # print(">>>>>>>>>>>>>>>>>", result.status_code)
-        # print(">>>>>>>>>>>>>>>>>>>>", result.json())
-        # assert result.json() == {"key": "value"}
-        # assert result.status_code == 200
-        # mock_get.assert_called_once_with(test_url)
+#         # print(">>>>>>>>>>>>>>>>>", result.status_code)
+#         # print(">>>>>>>>>>>>>>>>>>>>", result.json())
+#         # assert result.json() == {"key": "value"}
+#         # assert result.status_code == 200
+#         # mock_get.assert_called_once_with(test_url)
 
-        # test_payload = {"a":"b", "c":"d", "e":"f"}
-        # test_base_url = "https://baseurl.com"
+#         # test_payload = {"a":"b", "c":"d", "e":"f"}
+#         # test_base_url = "https://baseurl.com"
 
-        # test_api_call = get_api_response_json(test_payload)
+#         # test_api_call = get_api_response_json(test_payload)
 
-        # monkeypatch.setattr(requests, 'get', test_base_url, test_payload)
+#         # monkeypatch.setattr(requests, 'get', test_base_url, test_payload)
 
-        # print(test_api_call)
-        # assert False
+#         # print(test_api_call)
+#         # assert False
                   
 class TestAPIMessageFormat:
 
@@ -197,52 +197,54 @@ class TestSQSQueueCreated:
             monkeypatch.setattr('builtins.input', lambda _: "guardian content today")
             test_reference = create_sqs_queue_reference()
             test_url = create_sqs_queue(test_reference)
-            print(">>>>>>>>>>>>>>>>>>>>>>>>>", test_url)
             assert test_url.rsplit('/', 1)[-1] == "guardian_content_today"
     
-# class TestSQSMessageSent:
+class TestSQSMessageSent:
 
-#     @pytest.mark.it("Test that sqs message is sent successfully")
-#     @mock_aws
-#     def test_sqs_message_sent_successfully(self, monkeypatch):
+    @pytest.mark.it("Test that sqs message is sent successfully")
+    @mock_aws
+    def test_sqs_message_sent_successfully(self, monkeypatch):
 
-#         test_reference = monkeypatch.setattr('builtins.input', lambda _: "test_content")
-#         test_url = create_sqs_queue(test_reference)
-#         test_message = "This is a test"
-#         test_send = send_sqs_message(test_message, test_url)
-#         assert test_send['MD5OfMessageBody']
-#         assert test_send['MessageId']
+        monkeypatch.setattr('builtins.input', lambda _: "test_content")
+        test_reference = create_sqs_queue_reference()
+        test_url = create_sqs_queue(test_reference)
+        test_message = "This is a test"
+        test_send = send_sqs_message(test_message, test_url)
+        assert test_send['MD5OfMessageBody']
+        assert test_send['MessageId']
 
-# class TestViewingSQSMessage:
+class TestViewingSQSMessage:
 
-#     @pytest.mark.it("Test that sqs message can be viewed by user")
-#     @mock_aws
-#     def test_sqs_message_viewed_successfully(self, monkeypatch):
+    @pytest.mark.it("Test that sqs message can be viewed by user")
+    @mock_aws
+    def test_sqs_message_viewed_successfully(self, monkeypatch):
 
-#         test_reference = monkeypatch.setattr('builtins.input', lambda _: "test_content")
-#         test_url = create_sqs_queue(test_reference)
-#         test_message = "This is a test"
-#         test_send = send_sqs_message(test_message, test_url)
+        monkeypatch.setattr('builtins.input', lambda _: "test_content")
+        test_reference = create_sqs_queue_reference()
+        test_url = create_sqs_queue(test_reference)
+        test_message = "This is a test"
+        send_sqs_message(test_message, test_url)
 
-#         monkeypatch.setattr('builtins.input', lambda _: "y")
+        monkeypatch.setattr('builtins.input', lambda _: "y")
 
-#         test_message = view_sqs_message(test_url)
-#         assert test_message == 'Received message: This is a test'
+        test_message = view_sqs_message(test_url)
+        assert test_message == 'Received message: This is a test'
 
 
-#     @pytest.mark.it("Test that sqs message is not viewed if decided by user")
-#     @mock_aws
-#     def test_sqs_message_not_viewed(self, monkeypatch):
+    @pytest.mark.it("Test that sqs message is not viewed if decided by user")
+    @mock_aws
+    def test_sqs_message_not_viewed(self, monkeypatch):
 
-#         test_reference = monkeypatch.setattr('builtins.input', lambda _: "test_content")
-#         test_url = create_sqs_queue(test_reference)
-#         test_message = "This is a test"
-#         test_send = send_sqs_message(test_message, test_url)
+        monkeypatch.setattr('builtins.input', lambda _: "test_content")
+        test_reference = create_sqs_queue_reference()
+        test_url = create_sqs_queue(test_reference)
+        test_message = "This is a test"
+        send_sqs_message(test_message, test_url)
 
-#         monkeypatch.setattr('builtins.input', lambda _: "n")
+        monkeypatch.setattr('builtins.input', lambda _: "n")
 
-#         test_message = view_sqs_message(test_url)
-#         assert test_message == 'Thank you'
+        test_message = view_sqs_message(test_url)
+        assert test_message == 'Thank you'
 
 
 

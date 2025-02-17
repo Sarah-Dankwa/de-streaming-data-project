@@ -1,12 +1,14 @@
 import re._compiler
-import requests
+import requests, requests.exceptions
 import json
 import os
 import re
 from dotenv import load_dotenv
 from pprint import pprint
 import boto3
+from botocore.exceptions import ClientError
 import logging
+import time
 
 load_dotenv()
 
@@ -24,7 +26,7 @@ def is_valid_date(date):
     """Checks if an inputted date is a valid year, month and year in the form YYYY-MM-DD
        NB. needs to be updated to ensure valid year from 1999 - 2025 and not a date in the future
        Returns:
-            Boolean for valid or not valid dates
+            Boolean for valid or non valid dates
     """
     date_regex = re.compile(r'^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$')
     return bool(date_regex.match(date))
@@ -87,12 +89,19 @@ def get_api_response_json(payload):
        Returns:
             The results of the api call in json format.
     """
-    response = requests.get(base_url, params=payload)
-
-    if response.status_code == 200:
+    try: 
+        response = requests.get(base_url, params=payload, timeout=5)
+        response.raise_for_status()
         return response.json()['response']['results']
-    else:
-        return "The request could not be handled"
+
+    except requests.exceptions.HTTPError as errh:
+        raise SystemExit(f'"HTTP Error:", {errh}')
+    except requests.exceptions.ConnectionError as errc:
+        raise SystemExit(f'"Connection Error:", {errc}')
+    except requests.exceptions.Timeout as errt:
+        raise SystemExit(f'"Timeout Error:",{errt}')
+    except requests.exceptions.RequestException as err:
+        raise SystemExit(f'"Sorry there seems to be an issue:",{err}')
        
 def format_api_response_message(api_result):
     """This function takes in the results from the api call made in another function and formats them.
@@ -115,17 +124,20 @@ def create_sqs_queue(reference):
        Returns:
             The url of the created queue.
     """
-   
-    sqs_client = boto3.client('sqs')
-    sqs_queue = sqs_client.create_queue(
-        QueueName=reference,
-        Attributes={
-            "MessageRetentionPeriod":"259200"
-        }
-            )
+    try:
+        sqs_client = boto3.client('sqs')
+        sqs_queue = sqs_client.create_queue(
+            QueueName=reference,
+            Attributes={
+                "MessageRetentionPeriod":"259200"
+            }
+                )
+        
+        return sqs_queue["QueueUrl"]
     
-    return sqs_queue["QueueUrl"]
-
+    except ClientError as e:
+        raise SystemExit(f'"This SQS queue could not be created. Please contact AWS:", {e}')
+    
 def send_sqs_message(formatted_message, queue_url):
     """This function sends the formatted get requests response and sends it to
         the queue created by the user.
@@ -133,15 +145,18 @@ def send_sqs_message(formatted_message, queue_url):
        Returns:
             An AWS SQS response consisting of metadata such as the message Id and encoded message contents
     """
+    try:
+        sqs_client = boto3.client('sqs')
 
-    sqs_client = boto3.client('sqs')
-
-    sqs_response = sqs_client.send_message(
-            QueueUrl=queue_url,
-            MessageBody=formatted_message,
-            )
+        sqs_response = sqs_client.send_message(
+                QueueUrl=queue_url,
+                MessageBody=formatted_message,
+                )
+        
+        return sqs_response
     
-    return sqs_response
+    except ClientError as e:
+        raise SystemExit(f'"This message could not be sent. Please contact AWS:", {e}')
     
 def view_sqs_message(queue_url):
 
@@ -154,6 +169,7 @@ def view_sqs_message(queue_url):
                 WaitTimeSeconds=20
     )
 
+        time.sleep(5)
         messages =sqs_message.get('Messages', [])
         for message in messages:
 
@@ -190,9 +206,10 @@ def lambda_handler(event=None, context=None):
     if len(parameters)==3:
         api_response = get_api_response_json(payload=parameters)
 
-
+    if not api_response:
+        logger.error("THE API RESPONSE COULD NOT BE PROCESSED")
     formatted_response = format_api_response_message(api_response)
-
+    
     queue_reference = create_sqs_queue_reference()
 
     sqs_queue_url = create_sqs_queue(queue_reference)
@@ -206,10 +223,7 @@ def lambda_handler(event=None, context=None):
 
     view_response = view_sqs_message(sqs_queue_url)
 
-    return view_response
+    print(view_response)
             
 
-    
-
-
-# lambda_handler()
+   
