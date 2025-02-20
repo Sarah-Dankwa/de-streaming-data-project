@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError
 import logging
 import time
 
+# loads environment variables
 load_dotenv()
 
 logger = logging.getLogger()
@@ -223,6 +224,8 @@ def lambda_handler(event=None, context=None):
 
         6. The user then has the option to view the message on the screen.
     """
+
+    load_dotenv()
 
     if not API_KEY:
         logger.error("API KEY NOT FOUND - PLEASE CHECK")

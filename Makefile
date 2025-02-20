@@ -47,6 +47,9 @@ custom-dependencies:
 	@echo ">>> Installing requests to dependencies/python..."
 	$(call execute_in_env, $(PIP) install requests "urllib3<2" -t dependencies/python --no-cache-dir)
 
+	@echo ">>> Installing dotenv to dependencies/python..."
+	$(call execute_in_env, $(PIP) install python-dotenv -t dependencies/python --no-cache-dir)
+
 all-requirements: requirements custom-dependencies
 
 ################################################################################################################

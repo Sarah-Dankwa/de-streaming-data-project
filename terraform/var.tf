@@ -1,4 +1,4 @@
-variable "extract_lambda" {
+variable "stream_lambda" {
   type    = string
-  default = "extract"
+  default = "stream"
 }
