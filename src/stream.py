@@ -17,7 +17,6 @@ logger = logging.getLogger()
 
 logging.getLogger().setLevel(logging.INFO)
 
-
 API_KEY = os.environ.get("GUARDIAN_API_KEY")
 
 base_url = "https://content.guardianapis.com/search"
