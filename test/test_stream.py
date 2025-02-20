@@ -3,7 +3,7 @@ import json
 import boto3
 import os
 from moto import mock_aws
-from src.main import (
+from src.stream import (
     create_url_parameters,
     create_sqs_queue_reference,
     format_api_response_message,
