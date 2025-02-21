@@ -5,7 +5,7 @@
 data "archive_file" "lambda" {
   type             = "zip"
   output_file_mode = "0666"
-  source_file      = "${path.module}/../src/stream.py"
+  source_file      = "${path.module}/../src/original_stream.py"
   output_path      = "${path.module}/../stream.zip"
 }
 
@@ -22,7 +22,7 @@ data "archive_file" "requests_env_layer" {
 resource "aws_lambda_layer_version" "layer" {
     layer_name = "requests_layer"
     filename   = data.archive_file.requests_env_layer.output_path
-    compatible_runtimes = ["python3.12"]
+    compatible_runtimes = ["python3.11"]
 
   }
 
@@ -43,7 +43,7 @@ resource "aws_lambda_function" "stream_lambda_function" {
 
   # Define the entry point of the Lambda function 'stream', which is 'lambda_handler()' inside 'stream.py' 
   handler          = "${var.stream_lambda}.lambda_handler"  
-  runtime          = "python3.12"
+  runtime          = "python3.11"
   timeout          = 120
   
   publish = true

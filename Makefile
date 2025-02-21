@@ -50,6 +50,9 @@ custom-dependencies:
 	@echo ">>> Installing dotenv to dependencies/python..."
 	$(call execute_in_env, $(PIP) install python-dotenv -t dependencies/python --no-cache-dir)
 
+	@echo ">>> Installing pydantic to dependencies/python..."
+	$(call execute_in_env, $(PIP) install pydantic -t dependencies/python --no-cache-dir)
+
 all-requirements: requirements custom-dependencies
 
 ################################################################################################################
