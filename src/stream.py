@@ -164,6 +164,7 @@ def send_sqs_message(formatted_message, queue_url):
 
 
 def view_sqs_message(queue_url):
+    """This function retrives the message sent to sqs by the user"""
 
     sqs_client = boto3.client("sqs")
     sqs_message = sqs_client.receive_message(
