@@ -1,43 +1,25 @@
 import re._compiler
-import requests
-import requests.exceptions
+import requests, requests.exceptions
 import json
 import os
 import re
 from dotenv import load_dotenv
-import pprint
+from pprint import pprint
 import boto3
 from botocore.exceptions import ClientError
 import logging
 import time
-from pydantic import BaseModel, ValidationError, field_validator
-from typing import Optional
+
+# loads environment variables
+load_dotenv()
 
 logger = logging.getLogger()
 
 logging.getLogger().setLevel(logging.INFO)
 
+API_KEY = os.environ.get("GUARDIAN_API_KEY")
+
 base_url = "https://content.guardianapis.com/search"
-
-
-class GuardianApiInfo(BaseModel):
-    search_term: str
-    date_from: Optional[str] = None
-    reference: str
-
-    @field_validator("date_from")
-    @classmethod
-    def date_is_correct(cls, v):
-        if v:
-            if not is_valid_date(v):
-                raise ValueError("Dates must be entered in the correct format")
-            return v
-
-    @field_validator("reference")
-    @classmethod
-    def format_reference(cls, v):
-        formatted_reference = v.replace(" ", "_")
-        return formatted_reference
 
 
 def is_valid_date(date):
@@ -48,32 +30,73 @@ def is_valid_date(date):
     Returns:
         Boolean for valid or non valid dates
     """
-    date_regex = re.compile(
-        r"^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$")
+    date_regex = re.compile(r"^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$")
 
     return bool(date_regex.match(date))
 
 
-def get_api_key():
-    """This function searches the aws secrets manager for the guardian api key
+def create_url_parameters():
+    """user will input a search term for the
+       api call and an optional from date.
 
-        Returns:
-            The guardian api key in string format
+    Returns:
+         Dictionary with environment variable api key, user inputted search term
+         and optional from date to be passed to the requests module
+         in a different function.
+         From date will be assingned to None if not inputted by user.
     """
+    payload = {"api-key": API_KEY}
 
-    secret_name = "guardian_api_key"
-    secrets_client = boto3.client("secretsmanager")
+    search_term = ""
+    date_from = ""
 
-    try:
-        get_secret_value = secrets_client.get_secret_value(
-            SecretId=secret_name)
-        secret = get_secret_value["SecretString"]
-        secret_dict = json.loads(secret)
-        return secret_dict["api_key"]
+    while not search_term:
+        search_term = input(
+            "What would you like to search for today? You must enter a value \n"
+        )
 
-    except secrets_client.exceptions.ResourceNotFoundException as e:
-        if e.response["Error"]["Code"] == "ResourceNotFoundException":
-            logger.error(f"The [{secret_name}] could not be found")
+    payload["q"] = search_term
+
+    date_from = input(
+        "Would you like to limit those to a specific date? Input data in the form YYYY-MM-DD \
+            or press enter to skip  \n"
+    )
+
+    if not date_from:
+        payload["from-date"] = None
+
+    while date_from:
+        if is_valid_date(date_from):
+            payload["from-date"] = date_from
+            break
+        else:
+            print("Please enter a valid date")
+            date_from = input(
+                "Would you like to limit those to a specific date? \
+                    Input data in the form YYYY-MM-DD or press enter to skip  \n"
+            )
+            continue
+
+    return payload
+
+
+def create_sqs_queue_reference():
+    """User will be prompted to provide a reference for the name of their SQS queue.
+
+    Returns:
+         Inputted reference
+    """
+    reference = ""
+
+    while not reference:
+        reference = input(
+            "Please give a reference for your message broker.\
+                You must enter a value: \n"
+        )
+
+    formatted_reference = reference.replace(" ", "_")
+
+    return formatted_reference
 
 
 def get_api_response_json(payload):
@@ -85,6 +108,7 @@ def get_api_response_json(payload):
     try:
         response = requests.get(base_url, params=payload, timeout=5)
         response.raise_for_status()
+        return response.json()["response"]["results"]
 
     except requests.exceptions.HTTPError as errh:
         raise SystemExit(f'"HTTP Error:", {errh}')
@@ -94,10 +118,6 @@ def get_api_response_json(payload):
         raise SystemExit(f'"Timeout Error:",{errt}')
     except requests.exceptions.RequestException as err:
         raise SystemExit(f'"Sorry there seems to be an issue:",{err}')
-
-    else:
-        if response.status_code == 200:
-            return response.json()["response"]["results"]
 
 
 def format_api_response_message(api_result):
@@ -128,8 +148,7 @@ def create_sqs_queue(reference):
     try:
         sqs_client = boto3.client("sqs")
         sqs_queue = sqs_client.create_queue(
-            QueueName=reference, Attributes={
-                "MessageRetentionPeriod": "259200"}
+            QueueName=reference, Attributes={"MessageRetentionPeriod": "259200"}
         )
 
         return sqs_queue["QueueUrl"]
@@ -159,25 +178,28 @@ def send_sqs_message(formatted_message, queue_url):
         return sqs_response
 
     except ClientError as e:
-        raise SystemExit(
-            f'"This message could not be sent. Please contact AWS:", {e}')
+        raise SystemExit(f'"This message could not be sent. Please contact AWS:", {e}')
 
 
 def view_sqs_message(queue_url):
-    """This function retrives the message sent to sqs by the user"""
 
-    sqs_client = boto3.client("sqs")
-    sqs_message = sqs_client.receive_message(
-        QueueUrl=queue_url, WaitTimeSeconds=20)
+    view_message = input("Would you like to see the message? Type y or n: \n")
 
-    time.sleep(5)
-    messages = sqs_message.get("Messages", [])
-    for message in messages:
+    if view_message == "y":
+        sqs_client = boto3.client("sqs")
+        sqs_message = sqs_client.receive_message(QueueUrl=queue_url, WaitTimeSeconds=20)
 
-        return f"{'Received message':1}: {message['Body']}"
+        time.sleep(5)
+        messages = sqs_message.get("Messages", [])
+        for message in messages:
+
+            return f"{'Received message':1}: {message['Body']}"
+
+    else:
+        return "Thank you"
 
 
-def lambda_handler(event: dict, context=None):
+def lambda_handler(event=None, context=None):
     """
     The lambda function checks for an api-key environment variable.
 
@@ -201,23 +223,21 @@ def lambda_handler(event: dict, context=None):
         6. The user then has the option to view the message on the screen.
     """
 
-    try:
-        info = GuardianApiInfo.model_validate(event)
-    except ValidationError as e:
-        return {"result": "error", "message": e.errors(include_url=False)}
+    load_dotenv()
 
-    api_key = get_api_key()
+    if not API_KEY:
+        logger.error("API KEY NOT FOUND - PLEASE CHECK")
 
-    payload = {"api-key": api_key, "q": info.search_term,
-               "from-date": info.date_from}
+    parameters = create_url_parameters()
 
-    api_response = get_api_response_json(payload=payload)
+    if len(parameters) == 3:
+        api_response = get_api_response_json(payload=parameters)
 
     if not api_response:
         logger.error("THE API RESPONSE COULD NOT BE PROCESSED")
     formatted_response = format_api_response_message(api_response)
 
-    queue_reference = info.reference
+    queue_reference = create_sqs_queue_reference()
 
     sqs_queue_url = create_sqs_queue(queue_reference)
 
@@ -230,4 +250,7 @@ def lambda_handler(event: dict, context=None):
 
     view_response = view_sqs_message(sqs_queue_url)
 
-    return view_response
+    print(view_response)
+
+
+lambda_handler()
