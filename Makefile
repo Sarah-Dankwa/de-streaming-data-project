@@ -4,6 +4,10 @@
 #
 #################################################################################
 
+# Set variables from .env to MAKE
+include .env
+export
+
 PROJECT_NAME = de-streaming-data-project
 REGION = eu-west-2
 PYTHON_INTERPRETER = python
@@ -12,6 +16,11 @@ PYTHONPATH=${WD}
 SHELL := /bin/bash
 PROFILE = default
 PIP:=pip
+
+
+get-key: 
+
+	"${API_KEY}"
 
 ## Create python interpreter environment.
 create-environment:
@@ -99,11 +108,11 @@ run-flake8:
 
 ## Run the unit tests
 unit-tests:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -vvvrP)
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest test/test_new_stream.py -vvvrP)
 
 ## Run the coverage check
 check-coverage:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=src test/)
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=src test/test_new_stream.py)
 
 ## Run all checks
 run-checks: run-flake8 unit-tests check-coverage

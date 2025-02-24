@@ -76,4 +76,31 @@ resource "aws_iam_role_policy_attachment" "cw_policy_attachment_stream" {
   policy_arn = aws_iam_policy.cw_policy_stream.arn
 }
 
+# ==========================================
+# Secrets Manager Policy for Stream Lambda
+# ==========================================
 
+
+data "aws_iam_policy_document" "secret_manager_stream_document" {
+  statement {
+    effect   = "Allow"
+    actions  = ["secretsmanager:GetSecretValue"]
+    resources = [
+      "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:*guardian_api_key*"
+    ]
+    
+  }
+}
+
+//Create the IAM policy using the secret manager policy document
+resource "aws_iam_policy" "secret_manager_policy_stream" {
+  name_prefix = "secretmanager-policy-${var.stream_lambda}"
+  policy      = data.aws_iam_policy_document.secret_manager_stream_document.json
+}
+
+
+# Attach the Policy to the Lambda Role
+resource "aws_iam_role_policy_attachment" "secret_manager_stream_policy_attachment" {
+  role       = aws_iam_role.stream_lambda_role.name
+  policy_arn = aws_iam_policy.secret_manager_policy_stream.arn
+}

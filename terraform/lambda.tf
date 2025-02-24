@@ -5,12 +5,12 @@
 data "archive_file" "lambda" {
   type             = "zip"
   output_file_mode = "0666"
-  source_file      = "${path.module}/../src/original_stream.py"
+  source_file      = "${path.module}/../src/stream.py"
   output_path      = "${path.module}/../stream.zip"
 }
 
 // Create layer zip files to allow requests and dotenv modules to be imported and used by lambda
-data "archive_file" "requests_env_layer" {
+data "archive_file" "custom_layer" {
   type             = "zip"
   output_file_mode = "0777"
   source_dir     = "${path.module}/../dependencies/"
@@ -18,10 +18,11 @@ data "archive_file" "requests_env_layer" {
 
 }
 
+
 // Create layer resource using zip file from local machine
 resource "aws_lambda_layer_version" "layer" {
-    layer_name = "requests_layer"
-    filename   = data.archive_file.requests_env_layer.output_path
+    layer_name = "custom_layer"
+    filename   = data.archive_file.custom_layer.output_path
     compatible_runtimes = ["python3.11"]
 
   }
@@ -50,6 +51,8 @@ resource "aws_lambda_function" "stream_lambda_function" {
 
   # specify layers for the aws lambda function;  
   layers           = [aws_lambda_layer_version.layer.arn]
+
+  }
   
- }
+ 
 

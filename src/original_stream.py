@@ -184,7 +184,6 @@ def send_sqs_message(formatted_message, queue_url):
 def view_sqs_message(queue_url):
 
     view_message = input("Would you like to see the message? Type y or n: \n")
-    
 
     if view_message == "y":
         sqs_client = boto3.client("sqs")
