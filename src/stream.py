@@ -5,7 +5,7 @@ import json
 import os
 import re
 from dotenv import load_dotenv
-from pprint import pprint
+import pprint
 import boto3
 from botocore.exceptions import ClientError
 import logging

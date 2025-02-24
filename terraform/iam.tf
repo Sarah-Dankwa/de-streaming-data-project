@@ -28,9 +28,10 @@ resource "aws_iam_role" "stream_lambda_role" {
 data "aws_iam_policy_document" "sqs_stream_document" {
   statement {
     effect   = "Allow"
-     actions  = ["sqs:ReceiveMessage",
-                "sqs:GetQueueAttributes",
-                "sqs:GetQueueAttributes"
+     actions  = ["sqs:CreateQueue",
+                 "sqs:SendMessage",
+                 "sqs:ReceiveMessage",
+                 "sqs:GetQueueAttributes"
     ]
     resources = [
       "arn:aws:sqs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
