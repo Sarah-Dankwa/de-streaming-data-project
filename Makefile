@@ -35,7 +35,7 @@ create-environment:
 
 # Execute python related functionalities from within the project's environment
 define execute_in_env
-	$(ACTIVATE_ENV) && $1
+	(source venv/bin/activate && $1)
 endef
 
 ## Build the environment requirements
