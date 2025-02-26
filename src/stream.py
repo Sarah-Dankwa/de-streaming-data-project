@@ -67,7 +67,7 @@ def get_api_key():
     """
 
     secret_name = "guardian_api_key"
-    secrets_client = boto3.client("secretsmanager")
+    secrets_client = boto3.client("secretsmanager", region_name="eu-west-2")
 
     try:
         get_secret_value = secrets_client.get_secret_value(
@@ -133,7 +133,7 @@ def create_sqs_queue(reference):
          The url of the created queue.
     """
     try:
-        sqs_client = boto3.client("sqs")
+        sqs_client = boto3.client("sqs", region_name="eu-west-2")
         sqs_queue = sqs_client.create_queue(
             QueueName=reference, Attributes={
                 "MessageRetentionPeriod": "259200"}
@@ -156,7 +156,7 @@ def send_sqs_message(formatted_message, queue_url):
          such as the message Id and encoded message contents
     """
     try:
-        sqs_client = boto3.client("sqs")
+        sqs_client = boto3.client("sqs", region_name="eu-west-2")
 
         sqs_response = sqs_client.send_message(
             QueueUrl=queue_url,
@@ -173,7 +173,7 @@ def send_sqs_message(formatted_message, queue_url):
 def view_sqs_message(queue_url):
     """This function retrives the message sent to sqs by the user"""
 
-    sqs_client = boto3.client("sqs")
+    sqs_client = boto3.client("sqs", region_name="eu-west-2")
     sqs_message = sqs_client.receive_message(
         QueueUrl=queue_url, WaitTimeSeconds=20)
 
