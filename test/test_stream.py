@@ -114,6 +114,7 @@ class TestBaseClassValidation:
                 ref="content"
             )
 
+
 class TestValidDateFromFunction:
     @pytest.mark.it("Returns True if from-date is in the correct format")
     def test_correct_date_format(self):
@@ -138,6 +139,7 @@ class TestValidDateFromFunction:
         input_date = "2025-01-65"
         response = is_valid_date(input_date)
         assert not response
+
 
 class TestGetApiKeyFromAWSSecretsManager:
     @pytest.mark.it("Test secret is returned as a string")
