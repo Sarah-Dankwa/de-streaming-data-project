@@ -56,9 +56,6 @@ custom-dependencies:
 	@echo ">>> Installing requests to dependencies/python..."
 	$(call execute_in_env, $(PIP) install requests "urllib3<2" -t dependencies/python --no-cache-dir)
 
-	@echo ">>> Installing dotenv to dependencies/python..."
-	$(call execute_in_env, $(PIP) install python-dotenv -t dependencies/python --no-cache-dir)
-
 	@echo ">>> Installing pydantic to dependencies/python..."
 	$(call execute_in_env, $(PIP) install pydantic -t dependencies/python --no-cache-dir)
 
@@ -116,3 +113,33 @@ check-coverage:
 
 ## Run all checks
 run-checks: run-flake8 unit-tests check-coverage
+
+
+################################################################################################################
+
+#Deployment
+## Run Terraform Init
+terraform-init:
+	@echo ">>> Initializing Terraform"
+	cd terraform && terraform init
+
+## Run Terraform Plan
+terraform-plan: custom-dependencies terraform-init
+	@echo ">>> Running Terraform Plan ..."
+	cd terraform && terraform plan
+
+## Run Terraform Apply
+terraform-apply: custom-dependencies terraform-init
+	@echo ">>> Running Terraform Apply ..."
+	cd terraform && terraform apply -auto-approve
+
+## Run Terraform Destroy
+terraform-destroy: custom-dependencies terraform-init
+	@echo ">>> Destroying Terraform-managed infrastructure ..."
+	cd terraform && terraform destroy -auto-approve
+
+# Clean up dependencies after deployment 
+clean-dependencies:
+	@echo ">>> Cleanig dependencies/python ..."
+	rm -rf dependencies/python
+## rm -rf venv
