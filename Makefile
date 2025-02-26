@@ -17,11 +17,6 @@ SHELL := /bin/bash
 PROFILE = default
 PIP:=pip
 
-
-get-key: 
-
-	"${API_KEY}"
-
 ## Create python interpreter environment.
 create-environment:
 	@echo ">>> About to create environment: $(PROJECT_NAME)..."
@@ -35,8 +30,8 @@ create-environment:
 	    virtualenv venv --python=$(PYTHON_INTERPRETER); \
 	)
 
-# Define utility variable to help calling Python from the virtual environment
-ACTIVATE_ENV := source venv/bin/activate
+# # Define utility variable to help calling Python from the virtual environment
+# ACTIVATE_ENV := source venv/bin/activate
 
 # Execute python related functionalities from within the project's environment
 define execute_in_env
