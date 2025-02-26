@@ -2,10 +2,7 @@ import re._compiler
 import requests
 import requests.exceptions
 import json
-import os
 import re
-from dotenv import load_dotenv
-import pprint
 import boto3
 from botocore.exceptions import ClientError
 import logging
@@ -21,6 +18,14 @@ base_url = "https://content.guardianapis.com/search"
 
 
 class GuardianApiInfo(BaseModel):
+    """This is the Pydantic base model for the event being passed to the lambda
+       handler.
+       This function ignores incorrect keys and checks for missing key
+
+       Returns:
+            The given event with validation checks
+            If incorrect key is given an error message is printed.
+    """
     search_term: str
     date_from: Optional[str] = None
     reference: str
@@ -101,11 +106,12 @@ def get_api_response_json(payload):
 
 
 def format_api_response_message(api_result):
-    """This function takes in the results from the api call made in another function
-       and formats them.
+    """This function takes in the results from the api call made in
+       another function and formats them.
 
     Returns:
-       A json object with the relevant key value pairs extracted from the api results"""
+       A json object with the relevant key value pairs extracted
+       from the api results"""
 
     dict_keys = ["webPublicationDate", "webTitle", "webUrl"]
 
@@ -120,7 +126,8 @@ def format_api_response_message(api_result):
 
 def create_sqs_queue(reference):
     """Creates an sqs queue for the AWS user using the inputted reference.
-    Messages within this queue are only allowed to persist for a maximum of 3 days
+      Messages within this queue are only allowed to persist for a
+      maximum of 3 days
 
     Returns:
          The url of the created queue.
@@ -185,13 +192,13 @@ def lambda_handler(event: dict, context=None):
 
         1. Url parameters are created with user input
 
-        2. If the parameters object is the correct length then the api is called
-           using requests.get and a response returned
+        2. If the parameters object is the correct length then the api
+           is called using requests.get and a response returned
 
         3. This response is then formatted to a json object
 
-        4. An AWS SQS Queue is then created using a user inputted reference value
-           and returns a url pointing to the queue.
+        4. An AWS SQS Queue is then created using a user inputted
+           reference value and returns a url pointing to the queue.
 
         5. The formatted json object and queue url are then used to
            send the message to the queue.
