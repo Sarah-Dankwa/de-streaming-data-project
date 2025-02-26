@@ -67,7 +67,7 @@ def get_api_key():
     """
 
     secret_name = "guardian_api_key"
-    secrets_client = boto3.client("secretsmanager")
+    secrets_client = boto3.client("secretsmanager", region_name="eu-west-2")
 
     try:
         get_secret_value = secrets_client.get_secret_value(
