@@ -10,12 +10,12 @@
 
 PROJECT_NAME = de-streaming-data-project
 REGION = eu-west-2
-PYTHON_INTERPRETER = python
+PYTHON_INTERPRETER = python3
 WD=$(shell pwd)
 PYTHONPATH=${WD}
 SHELL := /bin/bash
 PROFILE = default
-PIP:=pip
+PIP:=pip3
 
 ## Create python interpreter environment.
 create-environment:
@@ -39,7 +39,7 @@ define execute_in_env
 endef
 
 ## Build the environment requirements
-requirements: 
+requirements: create-environment
 	$(call execute_in_env, $(PIP) install -r ./requirements.txt)
 
 ## Set up dependencies/python directory and install specific packages
