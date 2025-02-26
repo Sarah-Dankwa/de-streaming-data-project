@@ -5,8 +5,8 @@
 #################################################################################
 
 # Set variables from .env to MAKE
-include .env
-export
+# include .env
+# export
 
 PROJECT_NAME = de-streaming-data-project
 REGION = eu-west-2
@@ -86,7 +86,7 @@ coverage:
 flake8:
 	$(call execute_in_env, $(PIP) install flake8)
 
-## Set up dev requirements (bandit, black & coverage)
+## Set up dev requirements (bandit, black, safety, flake8 & coverage)
 dev-setup: bandit safety black coverage flake8
 
 ################################################################################################################
@@ -108,11 +108,11 @@ run-flake8:
 
 ## Run the unit tests
 unit-tests:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest test/test_new_stream.py -vvvrP)
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest test/ -vvvrP)
 
 ## Run the coverage check
 check-coverage:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=src test/test_new_stream.py)
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=src test/)
 
 ## Run all checks
 run-checks: run-flake8 unit-tests check-coverage
