@@ -6,24 +6,20 @@ The tool will accept a search term (e.g. "machine learning"), an optional "date_
 
 ## Installation
 
-Run make requirements to install all the python dependencies.
-
-```bash
-make requirements
-```
 
 **Personal Access Token**
 
-A personal access token will need to be generated in github to allow authentication in the command line if changes.
+In order to fork and access the repository, a personal access token will need to be generated in github to allow authentication in the command line		.
 
 Navigate to *settings* under your user picture, *developer settings* and then create a *classic personal token*.
 
 Set the scope of this token to *repo* and *workflow*.
 
 
+
 **GitHub Secrets**
 
-One you have forked and accessed the repository, you must add your aws credentials to github using the secrets feature.
+Once you have forked and accessed the repository, you must add your aws credentials to github using the secrets feature.
 
 Under your repository name, click  Settings. If you cannot see the "Settings" tab, select the  dropdown menu, then click Settings.
 
@@ -38,6 +34,13 @@ Add the following secrets:
 AWS_ACCESS_KEY_ID|{your aws secret access key}
 AWS_SECRET_ACCESS_KEY|{your aws secret access key}
 AWS_REGION|{your aws default region}
+
+Navigate to your project and run make requirements to install all the python dependencies.
+
+```bash
+make requirements
+```
+
 
 **Resources to add in the AWS console**
 
