@@ -19,13 +19,13 @@ Set the scope of this token to *repo* and *workflow*.
 
 **GitHub Secrets**
 
-Once you have forked and accessed the repository, you must add your aws credentials to github using the secrets feature.
+Add your aws credentials to github using the secrets feature.
 
-Under your repository name, click  Settings. If you cannot see the "Settings" tab, select the  dropdown menu, then click Settings.
+Under your repository name, click  *Settings*. If you cannot see the "Settings" tab, select the  dropdown menu, then click Settings.
 
-In the "Security" section of the sidebar, select  Secrets and variables, then click Actions.
+In the *"Security"* section of the sidebar, select  *Secrets and variables*, then click *Actions*.
 
-Click the Secrets tab and then add new repository secret.
+Click the Secrets tab and then *Add new repository secret*.
 
 Add the following secrets:
 
@@ -35,7 +35,7 @@ AWS_ACCESS_KEY_ID|{your aws secret access key}
 AWS_SECRET_ACCESS_KEY|{your aws secret access key}
 AWS_REGION|{your aws default region}
 
-Navigate to your project and run make requirements to install all the python dependencies.
+Navigate to your local version of the project and run make requirements to install all the python dependencies.
 
 ```bash
 make requirements
@@ -46,9 +46,9 @@ make requirements
 
 You will need to add your guardian api key details to AWS in order to access information from the api.
 
-Navigate to *Secrets Manager* in the AWS console and click store new secret.
+Navigate to *Secrets Manager* in the AWS console and click *Store new secret*.
 
-Choose ***Other type of secret*** from the options and enter the information as a key value pair.
+Choose *Other type of secret* from the options and enter the information as a key value pair.
 
 The key must be **api_key**, and then insert your own api key as the value.
 
@@ -61,7 +61,7 @@ Leave all other configuration options and click store to add the new secret.
 api_key|{your guardian api key}
 
 
-**Deploying to AWS**
+## Deploying to AWS
 
 ***Step 1:***
 
@@ -74,18 +74,18 @@ Credentials will be shared by AWS user with shared account
 
 ***Step 2:***
 
-Navigate to the terraform directory of the project 
+Navigate to the terraform directory of the project. 
 
 ```bash
 cd terraform 
 ```
 
-Run the terraform init command to intialise the working directory and download the necessary plugins
+Run the terraform init command to intialise the working directory and download the necessary plugins.
 
 ```bash
 terraform init
 ```
-Run the terraform plan command to create a mock-up view of what changes Terraform will make to your aws infrastructure
+Run the terraform plan command to create a mock-up view of what changes Terraform will make to your aws infrastructure.
 The lambda function and layer zip files will be created during this plan.
 
 ```bash
@@ -100,7 +100,7 @@ terraform apply
 
 ## Execution and Usage
 
-After running terraform apply, the lambda function and its layer and the necessary permissions will be availble in your aws console.
+After running terraform apply, the lambda function and layer and the necessary IAMS permissions will be available in your aws console.
 
 To run the lambda function, the event inputs must be as given:
 
@@ -121,6 +121,8 @@ date_from |{value} - optional value for api in the form YYYY-MM-DD
 }
 
 ```
+
+The function will send the results to an sqs stream and will also be displayed in the lambda console.
 
 
 
