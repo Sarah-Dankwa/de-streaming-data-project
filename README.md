@@ -100,7 +100,7 @@ terraform apply
 
 ## Execution and Usage
 
-After running terraform apply, the lambda function and layer and the necessary IAMS permissions will be available in your aws console.
+After running terraform apply, the lambda function and layer, the sqs stream with your given reference, and the necessary IAMS permissions will be available in your aws console.
 
 To run the lambda function, the event inputs must be as given:
 
@@ -122,7 +122,7 @@ date_from |{value} - optional value for api in the form YYYY-MM-DD
 
 ```
 
-The function will send the results to an sqs stream and will also be displayed in the lambda console.
+The function will send the results to the sqs stream and will also be displayed in the lambda console.
 
 
 
