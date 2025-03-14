@@ -9,7 +9,7 @@ The tool will accept a search term (e.g. "machine learning"), an optional "date_
 
 **Personal Access Token**
 
-In order to fork and access the repository, a personal access token will need to be generated in github to allow authentication in the command line		.
+In order to clone and access the repository, a personal access token will need to be generated in github to allow authentication in the command line		.
 
 Navigate to *settings* under your user picture, *developer settings* and then create a *classic personal token*.
 
