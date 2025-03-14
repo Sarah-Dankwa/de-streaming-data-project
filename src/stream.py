@@ -116,7 +116,7 @@ def format_api_response_message(api_result):
     dict_keys = ["webPublicationDate", "webTitle", "webUrl"]
 
     result_list = [
-        [v for k, v in dict.items() if k in dict_keys] for dict in api_result
+        [v for k, v in info.items() if k in dict_keys] for info in api_result
     ]
 
     result_dict = [dict(zip(dict_keys, item)) for item in result_list]
