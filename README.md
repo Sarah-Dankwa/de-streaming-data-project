@@ -6,6 +6,12 @@ The tool will accept a search term (e.g. "machine learning"), an optional "date_
 
 ## Installation
 
+**Versions**
+
+Requires Python 3.11 and above.
+
+To run Make commands in Windows, install WSL or the MinGW Package Manager.
+
 
 **Personal Access Token**
 
